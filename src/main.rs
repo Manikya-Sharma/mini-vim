@@ -3,24 +3,22 @@ use std::io::stderr;
 use anyhow::Result;
 use clap::Parser;
 use mini_vim::{
-    app_state::AppState,
     args::CustomArgs,
+    editor_mode::EditorMode,
+    editor_state::State,
     tui::{initialize, quit_app, run_event_loop},
-    State,
 };
 use ratatui::{prelude::CrosstermBackend, terminal};
 
 fn main() -> Result<()> {
     let args = CustomArgs::parse();
-    let state = State {
-        file: args.file.clone(),
-    };
-    let app_state = AppState::new(args);
+    let state = State::begin_from_file(args.file.clone());
+    let editor_mode = EditorMode::new(args);
     let terminal = terminal::Terminal::new(CrosstermBackend::new(stderr()))?;
 
     initialize()?;
 
-    run_event_loop(state, terminal, app_state)?;
+    run_event_loop(state, terminal, editor_mode)?;
 
     quit_app()?;
 

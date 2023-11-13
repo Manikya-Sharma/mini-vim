@@ -5,7 +5,7 @@ use ratatui::{
     Frame, Terminal,
 };
 
-use crate::app_state::AppState;
+use crate::editor_mode::EditorMode;
 
 fn layout_layer(frame: &Frame) -> std::rc::Rc<[ratatui::prelude::Rect]> {
     Layout::default()
@@ -20,7 +20,7 @@ fn layout_layer(frame: &Frame) -> std::rc::Rc<[ratatui::prelude::Rect]> {
 
 pub fn render_ui(
     terminal: &mut Terminal<CrosstermBackend<std::io::Stderr>>,
-    app_state: &mut AppState,
+    app_state: &mut EditorMode,
 ) -> Result<()> {
     terminal.draw(|frame| {
         let layout = layout_layer(frame);

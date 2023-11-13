@@ -9,9 +9,9 @@ use crossterm::terminal::{
 use ratatui::prelude::CrosstermBackend;
 use ratatui::Terminal;
 
-use crate::app_state::AppState;
+use crate::editor_mode::EditorMode;
+use crate::editor_state::State;
 use crate::ui::render_ui;
-use crate::State;
 
 pub fn initialize() -> Result<()> {
     enable_raw_mode()?;
@@ -26,44 +26,59 @@ pub fn quit_app() -> Result<()> {
 }
 
 /// returns result with bool True to quit false to keep running
-fn handle_events(state: &mut State, app_state: &mut AppState) -> Result<bool> {
+fn handle_events(state: &mut State, editor_mode: &mut EditorMode) -> Result<()> {
     if poll(std::time::Duration::from_millis(250))? {
         let event = crossterm::event::read()?;
-        match event {
-            event::Event::Key(k) => {
-                // keyboard events
-                if k.kind == event::KeyEventKind::Press {
-                    // if app is in idle mode then app_state can be changed
-                    if let AppState::Idle = app_state {
-                        if k.code == KeyCode::Char(':') {
-                            app_state.enter_command_mode();
-                        } else if k.code == KeyCode::Char('q') {
-                            return Ok(true);
-                        } else if k.code == KeyCode::Char('e') {
-                            app_state.enter_edit_mode(state.file.clone());
+        if let event::Event::Key(k) = event {
+            // keyboard events
+            if k.kind == event::KeyEventKind::Press {
+                // if app is in idle mode then app_state can be changed
+                if let EditorMode::Idle(_) = editor_mode {
+                    if k.code == KeyCode::Char(':') {
+                        editor_mode.enter_command_mode();
+                    } else if k.code == KeyCode::Char('i') {
+                        editor_mode.enter_edit_mode(state.file.clone());
+                    }
+                // app is not in idle mode
+                } else if k.code == KeyCode::Esc {
+                    editor_mode.enter_idle_mode(None);
+                // Some input in Edit or Command mode
+                } else {
+                    if let EditorMode::Command(_) = editor_mode {
+                        match k.code {
+                            KeyCode::Char(value) => {
+                                editor_mode.update_command(value);
+                            }
+                            KeyCode::Backspace => {
+                                editor_mode.remove_from_command();
+                            }
+                            KeyCode::Enter => match editor_mode.apply_command(state) {
+                                Ok(message) => editor_mode.enter_idle_mode(Some(message)),
+                                Err(m) => editor_mode.enter_idle_mode(Some(m.to_string())),
+                            },
+                            _ => {}
                         }
-                    // app is not in idle mode
-                    } else if k.code == KeyCode::Esc {
-                        app_state.enter_idle_mode();
+                    } else {
                     }
                 }
             }
-            _ => {}
         }
     }
-    Ok(false)
+    Ok(())
 }
 
 pub fn run_event_loop(
     mut state: State,
     mut terminal: Terminal<CrosstermBackend<std::io::Stderr>>,
-    mut app_state: AppState,
+    mut app_state: EditorMode,
 ) -> Result<()> {
     loop {
-        // event management
-        if handle_events(&mut state, &mut app_state)? {
+        if !state.running {
             break;
         }
+        // event management
+        handle_events(&mut state, &mut app_state)?;
+
         // user interface
         render_ui(&mut terminal, &mut app_state)?;
     }
