@@ -32,7 +32,7 @@ fn handle_events(state: &mut State, editor_mode: &mut EditorMode) -> Result<()> 
         if let event::Event::Key(k) = event {
             // keyboard events
             if k.kind == event::KeyEventKind::Press {
-                // if app is in idle mode then app_state can be changed
+                // if app is in idle mode then editor_state can be changed
                 if let EditorMode::Idle(_) = editor_mode {
                     if k.code == KeyCode::Char(':') {
                         editor_mode.enter_command_mode();
@@ -44,6 +44,7 @@ fn handle_events(state: &mut State, editor_mode: &mut EditorMode) -> Result<()> 
                     editor_mode.enter_idle_mode(None);
                 // Some input in Edit or Command mode
                 } else {
+                    // command mode
                     if let EditorMode::Command(_) = editor_mode {
                         match k.code {
                             KeyCode::Char(value) => {
@@ -58,7 +59,18 @@ fn handle_events(state: &mut State, editor_mode: &mut EditorMode) -> Result<()> 
                             },
                             _ => {}
                         }
+                    // editor mode
                     } else {
+                        match k.code {
+                            KeyCode::Char(value) => {
+                                state.update_edit( value);
+                            }
+                            KeyCode::Backspace => {
+                                state.remove_from_edit();
+                            }
+                            KeyCode::Enter => state.add_newline_edit(),
+                            _ => {}
+                        }
                     }
                 }
             }
@@ -70,17 +82,17 @@ fn handle_events(state: &mut State, editor_mode: &mut EditorMode) -> Result<()> 
 pub fn run_event_loop(
     mut state: State,
     mut terminal: Terminal<CrosstermBackend<std::io::Stderr>>,
-    mut app_state: EditorMode,
+    mut editor_state: EditorMode,
 ) -> Result<()> {
     loop {
         if !state.running {
             break;
         }
         // event management
-        handle_events(&mut state, &mut app_state)?;
+        handle_events(&mut state, &mut editor_state)?;
 
         // user interface
-        render_ui(&mut terminal, &mut app_state)?;
+        render_ui(&mut terminal, &mut editor_state, &state)?;
     }
     Ok(())
 }

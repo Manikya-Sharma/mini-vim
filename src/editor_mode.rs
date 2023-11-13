@@ -47,9 +47,17 @@ impl EditorMode {
 
     pub fn apply_command(&mut self, state: &mut State) -> Result<String> {
         if let EditorMode::Command(c) = self {
-            if c == "q" || c == "qiut" {
+            if c == "q" || c == "quit" {
                 state.end_program();
                 Ok(String::from("exiting mini-vim"))
+            } else if c == "w" || c == "write" {
+                match state.flush_file() {
+                    Ok(_) => Ok(String::from("File written successfully")),
+                    Err(e) => Err(anyhow::Error::from(Error::new(
+                        ErrorKind::Other,
+                        e.to_string(),
+                    ))),
+                }
             } else {
                 Err(anyhow::Error::from(Error::new(
                     ErrorKind::InvalidData,

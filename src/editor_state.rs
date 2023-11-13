@@ -18,8 +18,16 @@ impl State {
             content: String::new(),
         }
     }
-    pub fn update_content(&mut self, new_content: String) {
-        self.content = new_content;
+    pub fn update_edit(&mut self, ch: char) {
+        self.content.push(ch);
+    }
+
+    pub fn add_newline_edit(&mut self) {
+        self.content.push('\n');
+    }
+
+    pub fn remove_from_edit(&mut self) {
+        self.content.pop();
     }
 
     pub fn flush_file(&self) -> Result<()> {
