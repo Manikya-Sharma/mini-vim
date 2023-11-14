@@ -39,6 +39,16 @@ fn handle_events(state: &mut State, editor_mode: &mut EditorMode) -> Result<()> 
                     } else if k.code == KeyCode::Char('i') {
                         editor_mode.enter_edit_mode(state.file.clone());
                     }
+                    // navigation in idle mode
+                    else if k.code == KeyCode::Char('l') {
+                        state.move_cursor_ahead();
+                    } else if k.code == KeyCode::Char('h') {
+                        state.move_cursor_behind();
+                    }else if k.code == KeyCode::Char('j') {
+                        state.move_cursor_up();
+                    } else if k.code == KeyCode::Char('w') {
+                        state.move_by_a_word();
+                    }
                 // app is not in idle mode
                 } else if k.code == KeyCode::Esc {
                     editor_mode.enter_idle_mode(None);
@@ -63,7 +73,7 @@ fn handle_events(state: &mut State, editor_mode: &mut EditorMode) -> Result<()> 
                     } else {
                         match k.code {
                             KeyCode::Char(value) => {
-                                state.update_edit( value);
+                                state.update_edit(value);
                             }
                             KeyCode::Backspace => {
                                 state.remove_from_edit();

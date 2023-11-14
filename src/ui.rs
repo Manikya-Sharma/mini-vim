@@ -21,7 +21,7 @@ fn layout_layer(frame: &Frame) -> std::rc::Rc<[ratatui::prelude::Rect]> {
 pub fn render_ui(
     terminal: &mut Terminal<CrosstermBackend<std::io::Stderr>>,
     editor_state: &mut EditorMode,
-    state: &State
+    state: &State,
 ) -> Result<()> {
     terminal.draw(|frame| {
         let layout = layout_layer(frame);
@@ -30,9 +30,11 @@ pub fn render_ui(
             .block(Block::default().borders(Borders::BOTTOM))
             .alignment(ratatui::prelude::Alignment::Center);
 
-        let main_content = Paragraph::new(state.content.clone());
-        let footer =
-            Paragraph::new(editor_state.display_mode()).block(Block::default().borders(Borders::TOP));
+        let mut my_str = state.content.clone();
+        my_str.insert(state.cursor.location, '|');
+        let main_content = Paragraph::new(my_str);
+        let footer = Paragraph::new(editor_state.display_mode())
+            .block(Block::default().borders(Borders::TOP));
         frame.render_widget(title, layout[0]);
         frame.render_widget(main_content, layout[1]);
         frame.render_widget(footer, layout[2]);
