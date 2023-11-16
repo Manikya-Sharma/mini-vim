@@ -40,6 +40,25 @@ impl State {
         self.cursor.back_char();
     }
 
+    pub fn next_line_insert(&mut self) {
+        if self.content.len() == 0 {
+            self.content.push('\n');
+            self.cursor.location = 1;
+            return;
+        }
+        if let Some(slice) = self.content.get(self.cursor.location..) {
+            if let Some(newline) = slice.find('\n') {
+                self.cursor.move_ahead(newline);
+                self.add_newline_edit();
+            } else {
+                self.content.push('\n');
+                self.cursor.location = self.content.len();
+            }
+        } else {
+            self.add_newline_edit();
+        }
+    }
+
     pub fn move_cursor_ahead(&mut self) {
         if self.cursor.location >= self.content.len() {
             return;

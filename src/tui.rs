@@ -34,9 +34,14 @@ fn handle_events(state: &mut State, editor_mode: &mut EditorMode) -> Result<()> 
             if k.kind == event::KeyEventKind::Press {
                 // if app is in idle mode then editor_state can be changed
                 if let EditorMode::Idle(_) = editor_mode {
+                    // going to command mode
                     if k.code == KeyCode::Char(':') {
                         editor_mode.enter_command_mode();
+                    // going to insert mode
                     } else if k.code == KeyCode::Char('i') {
+                        editor_mode.enter_edit_mode(state.file.clone());
+                    } else if k.code == KeyCode::Char('o') {
+                        state.next_line_insert();
                         editor_mode.enter_edit_mode(state.file.clone());
                     }
                     // navigation in idle mode
@@ -50,6 +55,10 @@ fn handle_events(state: &mut State, editor_mode: &mut EditorMode) -> Result<()> 
                         state.move_cursor_down();
                     } else if k.code == KeyCode::Char('w') {
                         state.move_by_a_word();
+                    }
+                    // remove content
+                    else if k.code == KeyCode::Char('x') {
+                        state.remove_from_edit()
                     }
                 // app is not in idle mode
                 } else if k.code == KeyCode::Esc {

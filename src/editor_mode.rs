@@ -58,6 +58,16 @@ impl EditorMode {
                         e.to_string(),
                     ))),
                 }
+            } else if c == "wq" {
+                match state.flush_file() {
+                    Ok(_) => Ok(String::from("File written successfully")),
+                    Err(e) => Err(anyhow::Error::from(Error::new(
+                        ErrorKind::Other,
+                        e.to_string(),
+                    ))),
+                }?;
+                state.end_program();
+                Ok(String::from("exiting mini-vim"))
             } else {
                 Err(anyhow::Error::from(Error::new(
                     ErrorKind::InvalidData,

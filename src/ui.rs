@@ -1,6 +1,7 @@
 use anyhow::Result;
 use ratatui::{
     prelude::{Constraint, CrosstermBackend, Layout},
+    style::{Color, Stylize},
     widgets::{Block, Borders, Paragraph},
     Frame, Terminal,
 };
@@ -28,13 +29,27 @@ pub fn render_ui(
 
         let title = Paragraph::new(editor_state.get_file_name().unwrap_or("No file open"))
             .block(Block::default().borders(Borders::BOTTOM))
-            .alignment(ratatui::prelude::Alignment::Center);
+            .alignment(ratatui::prelude::Alignment::Center)
+            .bg(Color::LightRed)
+            .fg(Color::Magenta);
 
         let mut my_str = state.content.clone();
         my_str.insert(state.cursor.location, '|');
         let main_content = Paragraph::new(my_str);
-        let footer = Paragraph::new(editor_state.display_mode())
-            .block(Block::default().borders(Borders::TOP));
+        let footer = Paragraph::new(editor_state.display_mode()).block(
+            Block::default()
+                .borders(Borders::TOP)
+                .bg(match editor_state {
+                    EditorMode::Command(_) => Color::Blue,
+                    EditorMode::Edit(_) => Color::LightGreen,
+                    EditorMode::Idle(_) => Color::Cyan,
+                })
+                .fg(match editor_state {
+                    EditorMode::Command(_) => Color::White,
+                    EditorMode::Edit(_) => Color::Green,
+                    EditorMode::Idle(_) => Color::Blue,
+                }),
+        );
         frame.render_widget(title, layout[0]);
         frame.render_widget(main_content, layout[1]);
         frame.render_widget(footer, layout[2]);
