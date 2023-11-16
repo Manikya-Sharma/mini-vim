@@ -53,15 +53,45 @@ impl State {
 
     pub fn move_cursor_up(&mut self) {
         if let Some(slice) = self.content.get(..self.cursor.location) {
-            if let Some(loc) = slice.rfind("\n") {
+            if let Some(loc) = slice.rfind('\n') {
                 let first_chars = self.cursor.location - loc;
                 if let Some(second_slice) = self.content.get(..loc) {
-                    if let Some(last_newline) = second_slice.rfind("\n") {
-                        self.cursor
-                            .move_behind(self.cursor.location - last_newline - first_chars);
+                    if let Some(last_newline) = second_slice.rfind('\n') {
+                        if first_chars > loc - last_newline {
+                            self.cursor.move_behind(first_chars);
+                        } else {
+                            self.cursor
+                                .move_behind(self.cursor.location - last_newline - first_chars);
+                        }
+                    } else if first_chars > loc {
+                        self.cursor.move_behind(first_chars);
                     } else {
                         self.cursor
                             .move_behind(self.cursor.location - first_chars + 1);
+                    }
+                }
+            }
+        }
+    }
+
+    pub fn move_cursor_down(&mut self) {
+        if let Some(prev_slice) = self.content.get(..self.cursor.location) {
+            let loc1 = prev_slice.rfind('\n').unwrap_or(0);
+            let first_chars = self.cursor.location - loc1;
+            if let Some(after_slice) = self.content.get(self.cursor.location..) {
+                if let Some(after_chars) = after_slice.find('\n') {
+                    // check if next line has less number of characters
+                    if let Some(next_newline) = after_slice.get((after_chars + 1)..) {
+                        let next_newline_at = next_newline.find('\n').unwrap_or(self.content.len());
+                        if next_newline_at < first_chars {
+                            self.cursor.move_ahead(after_chars + next_newline_at + 1);
+                        } else if self.cursor.location + after_chars + first_chars
+                            < self.content.len()
+                        {
+                            self.cursor.move_ahead(after_chars + first_chars);
+                        } else {
+                            self.move_to_end();
+                        }
                     }
                 }
             }
@@ -73,8 +103,8 @@ impl State {
             return;
         }
         if let Some(slice) = self.content.get(self.cursor.location..) {
-            let loc1 = slice.to_string().find(" ");
-            let loc2 = slice.to_string().find("\n");
+            let loc1 = slice.find(' ');
+            let loc2 = slice.find('\n');
             if let Some(l1) = loc1 {
                 if let Some(l2) = loc2 {
                     if l1 < l2 {
@@ -83,28 +113,28 @@ impl State {
                         } else {
                             self.cursor.move_ahead(l1);
                         }
+                    } else if l2 == 0 {
+                        self.cursor.move_char();
                     } else {
-                        if l2 == 0 {
-                            self.cursor.move_char();
-                        } else {
-                            self.cursor.move_ahead(l2);
-                        }
+                        self.cursor.move_ahead(l2);
                     }
                 } else {
                     self.cursor.move_ahead(l1);
                 }
-            } else {
-                if let Some(l) = loc2 {
-                    if l == 0 {
-                        self.cursor.move_char();
-                    } else {
-                        self.cursor.move_ahead(l);
-                    }
+            } else if let Some(l) = loc2 {
+                if l == 0 {
+                    self.cursor.move_char();
                 } else {
-                    self.cursor.move_ahead(slice.len() - 1);
+                    self.cursor.move_ahead(l);
                 }
+            } else {
+                self.cursor.move_ahead(slice.len() - 1);
             }
         }
+    }
+
+    pub fn move_to_end(&mut self) {
+        self.cursor.location = self.content.len();
     }
 
     pub fn flush_file(&self) -> Result<()> {

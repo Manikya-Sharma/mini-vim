@@ -2,6 +2,12 @@ pub struct Cursor {
     pub location: usize,
 }
 
+impl Default for Cursor {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Cursor {
     pub fn new() -> Self {
         Cursor { location: 0 }

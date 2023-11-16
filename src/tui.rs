@@ -44,8 +44,10 @@ fn handle_events(state: &mut State, editor_mode: &mut EditorMode) -> Result<()> 
                         state.move_cursor_ahead();
                     } else if k.code == KeyCode::Char('h') {
                         state.move_cursor_behind();
-                    }else if k.code == KeyCode::Char('j') {
+                    } else if k.code == KeyCode::Char('k') {
                         state.move_cursor_up();
+                    } else if k.code == KeyCode::Char('j') {
+                        state.move_cursor_down();
                     } else if k.code == KeyCode::Char('w') {
                         state.move_by_a_word();
                     }
