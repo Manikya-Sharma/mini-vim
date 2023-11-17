@@ -14,10 +14,10 @@ pub enum EditorMode {
 
 impl EditorMode {
     pub fn new(args: CustomArgs) -> Self {
-        if let Some(file) = args.file {
-            Self::Edit(Some(file))
+        if args.file.is_some() {
+            Self::Idle(Some(String::from("Opened a file")))
         } else {
-            Self::Idle(None)
+            Self::Idle(Some(String::from("Opened untitiled file")))
         }
     }
 

@@ -1,5 +1,6 @@
 use anyhow::Result;
 use std::{
+    fs::{self, File},
     io::{Error, ErrorKind},
     path::PathBuf,
 };
@@ -15,13 +16,47 @@ pub struct State {
 }
 
 impl State {
-    pub fn begin_from_file(file: Option<PathBuf>) -> Self {
-        Self {
-            running: true,
-            file,
-            content: String::new(),
-            cursor: Cursor::new(),
-            stacked_command: None,
+    pub fn begin_from_file(file: Option<PathBuf>) -> Result<Self> {
+        if let Some(file) = file {
+            let open_file = File::open(file.clone());
+            match open_file {
+                Ok(_) => Ok(Self {
+                    running: true,
+                    file: Some(file.clone()),
+                    content: fs::read_to_string(file)?,
+                    cursor: Cursor::new(),
+                    stacked_command: None,
+                }),
+                Err(e) => {
+                    if e.kind() == ErrorKind::NotFound {
+                        // new file
+                        Ok(Self {
+                            running: true,
+                            file: Some(file.clone()),
+                            content: String::new(),
+                            cursor: Cursor::new(),
+                            stacked_command: None,
+                        })
+                    } else {
+                        Ok(Self {
+                            running: true,
+                            file: None,
+                            content: String::new(),
+                            cursor: Cursor::new(),
+                            stacked_command: None,
+                        })
+                    }
+                }
+            }
+        } else {
+            // start in a buffer
+            Ok(Self {
+                running: true,
+                file: None,
+                content: String::new(),
+                cursor: Cursor::new(),
+                stacked_command: None,
+            })
         }
     }
     pub fn update_edit(&mut self, ch: char) {
@@ -58,24 +93,22 @@ impl State {
                 self.content.drain(prev_newline..self.content.len());
                 self.cursor.location = prev_newline;
             }
-        } else {
-            if let Some(after) = self.content.get(self.cursor.location..) {
-                if let Some(newline) = after.find('\n') {
-                    self.content.drain(0..newline);
-                    self.cursor.location = 0;
-                } else {
-                    self.content.clear();
-                    self.cursor.location = 0;
-                }
+        } else if let Some(after) = self.content.get(self.cursor.location..) {
+            if let Some(newline) = after.find('\n') {
+                self.content.drain(0..newline);
+                self.cursor.location = 0;
             } else {
                 self.content.clear();
                 self.cursor.location = 0;
             }
+        } else {
+            self.content.clear();
+            self.cursor.location = 0;
         }
     }
 
     pub fn next_line_insert(&mut self) {
-        if self.content.len() == 0 {
+        if self.content.is_empty() {
             self.content.push('\n');
             self.cursor.location = 1;
             return;
@@ -94,7 +127,7 @@ impl State {
     }
 
     pub fn above_line_insert(&mut self) {
-        if self.content.len() == 0 {
+        if self.content.is_empty() {
             self.content.push('\n');
             return;
         }

@@ -12,7 +12,7 @@ use ratatui::{prelude::CrosstermBackend, terminal};
 
 fn main() -> Result<()> {
     let args = CustomArgs::parse();
-    let state = State::begin_from_file(args.file.clone());
+    let state = State::begin_from_file(args.file.clone())?;
     let editor_mode = EditorMode::new(args);
     let terminal = terminal::Terminal::new(CrosstermBackend::new(stderr()))?;
 
