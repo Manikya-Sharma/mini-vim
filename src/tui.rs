@@ -40,8 +40,16 @@ fn handle_events(state: &mut State, editor_mode: &mut EditorMode) -> Result<()> 
                     // going to insert mode
                     } else if k.code == KeyCode::Char('i') {
                         editor_mode.enter_edit_mode(state.file.clone());
+                    } else if k.code == KeyCode::Char('a') {
+                        if state.cursor.location < state.content.len() {
+                            state.cursor.move_char();
+                        }
+                        editor_mode.enter_edit_mode(state.file.clone());
                     } else if k.code == KeyCode::Char('o') {
                         state.next_line_insert();
+                        editor_mode.enter_edit_mode(state.file.clone());
+                    } else if k.code == KeyCode::Char('O') {
+                        state.above_line_insert();
                         editor_mode.enter_edit_mode(state.file.clone());
                     }
                     // navigation in idle mode
@@ -59,6 +67,17 @@ fn handle_events(state: &mut State, editor_mode: &mut EditorMode) -> Result<()> 
                     // remove content
                     else if k.code == KeyCode::Char('x') {
                         state.remove_from_edit()
+                    } else if k.code == KeyCode::Char('d') {
+                        if let Some(c) = &state.stacked_command {
+                            if c == "d" {
+                                state.delete_line();
+                                state.stacked_command = None;
+                            } else {
+                                state.stacked_command = None;
+                            }
+                        } else {
+                            state.stacked_command = Some(String::from('d'));
+                        }
                     }
                 // app is not in idle mode
                 } else if k.code == KeyCode::Esc {

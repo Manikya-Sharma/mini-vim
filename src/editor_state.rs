@@ -11,6 +11,7 @@ pub struct State {
     pub file: Option<PathBuf>,
     pub content: String,
     pub cursor: Cursor,
+    pub stacked_command: Option<String>,
 }
 
 impl State {
@@ -20,6 +21,7 @@ impl State {
             file,
             content: String::new(),
             cursor: Cursor::new(),
+            stacked_command: None,
         }
     }
     pub fn update_edit(&mut self, ch: char) {
@@ -40,6 +42,38 @@ impl State {
         self.cursor.back_char();
     }
 
+    pub fn delete_line(&mut self) {
+        if let Some(before) = self.content.get(..self.cursor.location) {
+            let prev_newline = before.rfind('\n').unwrap_or(0);
+            if let Some(after) = self.content.get(self.cursor.location..) {
+                if let Some(after_newline) = after.find('\n') {
+                    self.content
+                        .drain(prev_newline..(self.cursor.location + after_newline));
+                    self.cursor.location = prev_newline;
+                } else {
+                    self.content.drain(prev_newline..self.content.len());
+                    self.cursor.location = prev_newline;
+                }
+            } else {
+                self.content.drain(prev_newline..self.content.len());
+                self.cursor.location = prev_newline;
+            }
+        } else {
+            if let Some(after) = self.content.get(self.cursor.location..) {
+                if let Some(newline) = after.find('\n') {
+                    self.content.drain(0..newline);
+                    self.cursor.location = 0;
+                } else {
+                    self.content.clear();
+                    self.cursor.location = 0;
+                }
+            } else {
+                self.content.clear();
+                self.cursor.location = 0;
+            }
+        }
+    }
+
     pub fn next_line_insert(&mut self) {
         if self.content.len() == 0 {
             self.content.push('\n');
@@ -56,6 +90,25 @@ impl State {
             }
         } else {
             self.add_newline_edit();
+        }
+    }
+
+    pub fn above_line_insert(&mut self) {
+        if self.content.len() == 0 {
+            self.content.push('\n');
+            return;
+        }
+        if let Some(slice) = self.content.get(..self.cursor.location) {
+            if let Some(newline) = slice.rfind('\n') {
+                self.cursor.move_behind(self.cursor.location - newline);
+                self.add_newline_edit();
+            } else {
+                self.cursor.location = 0;
+                self.content.push('\n');
+            }
+        } else {
+            self.add_newline_edit();
+            self.cursor.back_char();
         }
     }
 

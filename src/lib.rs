@@ -7,6 +7,7 @@ pub mod ui;
 
 #[cfg(test)]
 mod tests {
+
     use crate::{cursor::Cursor, editor_state::State};
 
     #[test]
@@ -17,6 +18,7 @@ mod tests {
             cursor,
             running: true,
             file: None,
+            stacked_command: None,
         };
 
         assert_eq!(state.cursor.location, 10);
@@ -31,6 +33,7 @@ mod tests {
             cursor,
             running: true,
             file: None,
+            stacked_command: None,
         };
 
         assert_eq!(state.cursor.location, 10);
@@ -45,10 +48,25 @@ mod tests {
             cursor,
             running: true,
             file: None,
+            stacked_command: None,
         };
 
         assert_eq!(state.cursor.location, 12);
         state.move_cursor_down();
         assert_eq!(state.cursor.location, 20);
+    }
+
+    #[test]
+    fn delete_line() {
+        let cursor = Cursor { location: 12 };
+        let mut state = State {
+            content: String::from("12345678\n12345678\n12345678"),
+            cursor,
+            running: true,
+            file: None,
+            stacked_command: None,
+        };
+        state.delete_line();
+        assert_eq!(state.content, String::from("12345678\n12345678"));
     }
 }
